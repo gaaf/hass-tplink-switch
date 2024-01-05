@@ -25,8 +25,8 @@ class TpLinkSystemInfo:
 #   PortSpeed
 # ---------------------------
 class PortSpeed(IntEnum):
-    LINK_DOWN = 0
-    AUTO = 1
+    AUTO = 0
+    LINK_DOWN = 1
     HALF_10M = 2
     FULL_10M = 3
     HALF_100M = 4
@@ -39,9 +39,9 @@ class PortSpeed(IntEnum):
 #   PoePriority
 # ---------------------------
 class PoePriority(IntEnum):
-    HIGH = 0
+    HIGH = 2
     MIDDLE = 1
-    LOW = 2
+    LOW = 0
 
     @classmethod
     def try_parse(cls, value):
@@ -54,11 +54,11 @@ class PoePriority(IntEnum):
 #   PoePowerLimit
 # ---------------------------
 class PoePowerLimit(IntEnum):
-    AUTO = 330
-    CLASS_1 = 40
-    CLASS_2 = 70
-    CLASS_3 = 154
-    CLASS_4 = 300
+    AUTO = 0
+    CLASS_1 = 1
+    CLASS_2 = 2
+    CLASS_3 = 3
+    CLASS_4 = 4
 
     @classmethod
     def try_parse(cls, value):

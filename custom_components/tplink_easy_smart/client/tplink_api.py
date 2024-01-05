@@ -17,29 +17,30 @@ from .classes import (
 from .const import (
     FEATURE_POE,
     URL_DEVICE_INFO,
-    URL_POE_PORT_SETTINGS_SET,
-    URL_POE_SETTINGS_GET,
-    URL_POE_SETTINGS_SET,
-    URL_PORT_SETTINGS_SET,
-    URL_PORTS_SETTINGS_GET,
+    URL_INTERFACES,
+    URL_PORT_STATES,
+    URL_PORT_SETTINGS,
+    URL_POE_GLOBAL,
+    URL_POE_PORT_SETTINGS,
+
 )
-from .coreapi import TpLinkWebApi, VariableType
+from .coreapi import TpLinkJsonApi, VariableType
 from .utils import TpLinkFeaturesDetector
 
 _LOGGER = logging.getLogger(__name__)
 
 _POE_PRIORITIES_SET_MAP: dict[PoePriority, int] = {
-    PoePriority.HIGH: 1,
-    PoePriority.MIDDLE: 2,
-    PoePriority.LOW: 3,
+    PoePriority.HIGH: 2,
+    PoePriority.MIDDLE: 1,
+    PoePriority.LOW: 0,
 }
 
-_POE_POWER_LIMITS_SET_MAP: dict[PoePowerLimit, Tuple[int, str | None]] = {
-    PoePowerLimit.AUTO: (1, None),
-    PoePowerLimit.CLASS_1: (2, "(4w)"),
-    PoePowerLimit.CLASS_2: (3, "(7w)"),
-    PoePowerLimit.CLASS_3: (4, "(15.4w)"),
-    PoePowerLimit.CLASS_4: (5, "(30w)"),
+_POE_POWER_LIMITS_SET_MAP: dict[PoePowerLimit, int] = {
+    PoePowerLimit.AUTO: 0,
+    PoePowerLimit.CLASS_1: 1,
+    PoePowerLimit.CLASS_2: 2,
+    PoePowerLimit.CLASS_3: 3,
+    PoePowerLimit.CLASS_4: 4
 }
 
 
@@ -75,9 +76,11 @@ class TpLinkApi:
         verify_ssl: bool,
     ) -> None:
         """Initialize."""
-        self._core_api = TpLinkWebApi(host, port, use_ssl, user, password, verify_ssl)
+        self._core_api = TpLinkJsonApi(host, port, use_ssl, user, password, verify_ssl)
         self._is_features_updated = False
         self._features = TpLinkFeaturesDetector(self._core_api)
+        self._port_count = None
+        self._poe_port_count = None
         _LOGGER.debug("New instance of TpLinkApi created")
 
     async def _ensure_features_updated(self):
@@ -105,64 +108,56 @@ class TpLinkApi:
         """URL address of the device."""
         return self._core_api.device_url
 
+    async def get_port_count(self) -> int:
+        if self._port_count == None:
+            ports = await self._core_api.get_variables(URL_PORT_SETTINGS)
+            if not ports:
+                raise ActionError("Can not get ports count")
+            self._port_count = len(ports)
+
+        return self._port_count
+
+    async def get_poe_port_count(self) -> int:
+        if self._poe_port_count == None:
+            ports = await self._core_api.get_variables(URL_POE_PORT_SETTINGS)
+            if not ports:
+                raise ActionError("Can not get ports count")
+            self._poe_port_count = len(ports)
+
+        return self._poe_port_count
+
     async def get_device_info(self) -> TpLinkSystemInfo:
         """Return the device information."""
-        data = await self._core_api.get_variable(
-            URL_DEVICE_INFO, "info_ds", VariableType.Dict
-        )
-
-        def get_value(key: str) -> str | None:
-            if data is None:
-                return None
-            array = data.get(key, [])
-            if len(array) != 1:
-                return None
-            return array[0]
+        sys = await self._core_api.get_variables(URL_DEVICE_INFO)
+        ip = await self._core_api.get_variables(URL_INTERFACES)
+        ip = ip[0]
 
         return TpLinkSystemInfo(
-            name=get_value("descriStr"),
-            mac=get_value("macStr"),
-            ip=get_value("ipStr"),
-            netmask=get_value("netmaskStr"),
-            gateway=get_value("gatewayStr"),
-            firmware=get_value("firmwareStr"),
-            hardware=get_value("hardwareStr"),
+            name=sys["dev_name"],
+            firmware=sys["fw_version"],
+            hardware=sys["hw_version"],
+            mac=sys["mac_address"],
+
+            ip=ip["ip"],
+            netmask=ip["mask"],
         )
 
     async def get_port_states(self) -> list[PortState]:
         """Return the port states."""
-        data = await self._core_api.get_variables(
-            URL_PORTS_SETTINGS_GET,
-            [
-                ("all_info", VariableType.Dict),
-                ("max_port_num", VariableType.Int),
-            ],
-        )
+        data = await self._core_api.get_variables(URL_PORT_STATES)
+        self._port_count = len(data)
+        config = await self._core_api.get_variables(URL_PORT_SETTINGS)
 
         result: list[PortState] = []
 
-        all_info = data.get("all_info")
-        if not all_info:
-            return result
-
-        max_port_num = data.get("max_port_num")
-        if not max_port_num:
-            return result
-
-        enabled_flags = all_info.get("state")
-        speeds_config = all_info.get("spd_cfg")
-        speeds_actual = all_info.get("spd_act")
-        fc_config_flags = all_info.get("fc_cfg")
-        fc_actual_flags = all_info.get("fc_act")
-
-        for number in range(1, max_port_num + 1):
+        for idx, p in enumerate(data, start=1):
             state = PortState(
-                number=number,
-                speed_config=PortSpeed(speeds_config[number - 1]),
-                speed_actual=PortSpeed(speeds_actual[number - 1]),
-                enabled=enabled_flags[number - 1] == 1,
-                flow_control_config=fc_config_flags[number - 1] == 1,
-                flow_control_actual=fc_actual_flags[number - 1] == 1,
+                number=idx,
+                speed_config=PortSpeed(6 if p["speedCfg"] == 3 else p["speedCfg"] * 2 + (0 if p["duplexCfg"] == 0 else p["duplexCfg"] - 1)),
+                speed_actual=PortSpeed(1 if p["linkStatus"] == 0 else 6 if p["speedLink"] == 3 else p["speedLink"] * 2 + p["duplexLink"] - 1),
+                enabled=p["state"] == 1,
+                flow_control_config=config[idx-1]["flowControl"] == 1,
+                flow_control_actual=p["flowControl"] == 1,
             )
             result.append(state)
 
@@ -173,47 +168,22 @@ class TpLinkApi:
         if not await self.is_feature_available(FEATURE_POE):
             return []
 
-        data = await self._core_api.get_variables(
-            URL_POE_SETTINGS_GET,
-            [
-                ("portConfig", VariableType.Dict),
-                ("poe_port_num", VariableType.Int),
-            ],
-        )
+        data = await self._core_api.get_variables(URL_POE_PORT_SETTINGS)
+        self._poe_port_count = len(data)
 
         result: list[PortPoeState] = []
 
-        port_config = data.get("portConfig")
-        if not port_config:
-            _LOGGER.debug("No portConfig found, returning")
-            return result
-
-        max_port_num = data.get("poe_port_num")
-        if not max_port_num:
-            _LOGGER.debug("No poe_port_num found, returning")
-            return result
-
-        state_flags = port_config.get("state")
-        priority_flags = port_config.get("priority")
-        powerlimit_flags = port_config.get("powerlimit")
-        powers = port_config.get("power")
-        currents = port_config.get("current")
-        voltages = port_config.get("voltage")
-        pdclass_flags = port_config.get("pdclass")
-        powerstatus_flags = port_config.get("powerstatus")
-
-        for number in range(1, max_port_num + 1):
+        for p in data:
             state = PortPoeState(
-                number=number,
-                enabled=state_flags[number - 1] == 1,
-                priority=PoePriority(priority_flags[number - 1]),
-                current=currents[number - 1],
-                voltage=voltages[number - 1] / 10,
-                power_limit=PoePowerLimit.try_parse(powerlimit_flags[number - 1])
-                or powerlimit_flags[number - 1] / 10,
-                power_status=PoePowerStatus(powerstatus_flags[number - 1]),
-                pd_class=PoeClass.try_parse(pdclass_flags[number - 1]),
-                power=powers[number - 1] / 10,
+                number=int(p["port"]),
+                enabled=p["poeStatus"] == 1,
+                priority=PoePriority(p["poePriority"]),
+                current=p["current"],
+                voltage=p["voltage"],
+                power=p["power"],
+                power_limit=PoePowerLimit.try_parse(p["powerLimit"]) or p["powerLimit"] / 10,
+                power_status=PoePowerStatus(p["poeStatus"]),
+                pd_class=PoeClass.try_parse(p["pdClass"]),
             )
             result.append(state)
 
@@ -226,19 +196,18 @@ class TpLinkApi:
 
         _LOGGER.debug("Begin fetching POE states")
 
-        poe_config = await self._core_api.get_variable(
-            URL_POE_SETTINGS_GET, "globalConfig", VariableType.Dict
-        )
+        poe_config = await self._core_api.get_variables(URL_POE_GLOBAL)
         if not poe_config:
-            _LOGGER.debug("No globalConfig found, returning")
+            _LOGGER.warning("No POE status found, returning")
             return None
 
+        unit = poe_config[0]
         return PoeState(
-            power_limit=poe_config.get("system_power_limit", 0) / 10,
-            power_remain=poe_config.get("system_power_remain", 0) / 10,
-            power_limit_min=poe_config.get("system_power_limit_min", 0) / 10,
-            power_limit_max=poe_config.get("system_power_limit_max", 0) / 10,
-            power_consumption=poe_config.get("system_power_consumption", 0) / 10,
+            power_limit=unit["limit"],
+            power_remain=unit["remain"],
+            power_limit_min=unit["min"],
+            power_limit_max=unit["max"],
+            power_consumption=unit["comsumption"],
         )
 
     async def set_port_state(
@@ -249,14 +218,28 @@ class TpLinkApi:
         flow_control_config: bool,
     ) -> None:
         """Change port state."""
-        query: str = (
-            f"portid={number}&"
-            f"state={1 if enabled else 0}&"
-            f"speed={speed_config.value}&"
-            f"flowcontrol={1 if flow_control_config else 0}&"
-            f"apply=Apply"
-        )
-        await self._core_api.get(URL_PORT_SETTINGS_SET, query=query)
+
+        if number < 1:
+            raise ActionError("Port number should be greater than or equals to 1")
+        if number > await self.get_port_count():
+            raise ActionError(
+                f"Port number should be less than or equals to {ports_count}"
+            )
+
+        port = {
+            "key": f"1/0/{number}",
+            "status": 1 if enabled else 0,
+            "speed": speed_config.value,
+            "flowControl": 1 if flow_control_config else 0
+        }
+
+        data = {
+            "operation": "update",
+            "tab": "unit1",
+            "new": [ port, ],
+        }
+        result = await self._core_api.post(URL_PORT_SETTINGS, data)
+        _LOGGER.debug("PORT_SET_RESULT: %s", result)
 
     async def set_poe_limit(self, limit: float) -> None:
         """Change poe limit."""
@@ -277,12 +260,15 @@ class TpLinkApi:
             )
 
         data = {
-            "name_powerlimit": limit,
-            "name_powerconsumption": current_state.power_consumption,
-            "name_powerremain": current_state.power_remain,
-            "applay": "Apply",
+            "operation": "update",
+            "new": [
+                {
+                    "unit": 1,
+                    "limit": limit,
+                },
+            ],
         }
-        result = await self._core_api.post(URL_POE_SETTINGS_SET, data)
+        result = await self._core_api.post(URL_POE_GLOBAL, data)
         _LOGGER.debug("POE_SET_RESULT: %s", result)
 
     async def set_port_poe_settings(
@@ -297,44 +283,40 @@ class TpLinkApi:
         """Change port poe settings."""
         if port_number < 1:
             raise ActionError("Port number should be greater than or equals to 1")
-
-        poe_ports_count = await self._core_api.get_variable(
-            URL_POE_SETTINGS_GET, "poe_port_num", VariableType.Int
-        )
-        if not poe_ports_count:
-            raise ActionError("Can not get PoE ports count")
-
-        if port_number > poe_ports_count:
+        if port_number > await self.get_poe_port_count():
             raise ActionError(
                 f"Port number should be less than or equals to {poe_ports_count}"
             )
 
-        pstate = 2 if enabled else 1
-
         ppriority = _POE_PRIORITIES_SET_MAP.get(priority)
-        if not ppriority:
+        if ppriority == None:
             raise ActionError("Invalid PoePriority specified")
 
         if isinstance(power_limit, PoePowerLimit):
-            ppowerlimit, ppowerlimit2 = _POE_POWER_LIMITS_SET_MAP.get(power_limit)
-            if not ppowerlimit:
+            ppowerlimit = int(power_limit)
+            if ppowerlimit == None:
                 raise ActionError("Invalid PoePowerLimit specified")
         elif isinstance(power_limit, float):
             if 0.1 <= power_limit <= 30.0:  # hardcoded in Tp-Link javascript
-                ppowerlimit = 6
-                ppowerlimit2 = power_limit
+                ppowerlimit = 9
             else:
                 raise ActionError("Power limit must be in range of 0.1-30.0")
         else:
             raise ActionError("Invalid power_limit specified")
 
+        port =  {
+                    "key": str(port_number),
+                    "poeStatus": 1 if enabled else 0,
+                    "poePriority": ppriority,
+                    "powerLimit": ppowerlimit,
+                }
+        if ppowerlimit == 9:
+            port["powerLimitValue"] = power_limit
+
         data = {
-            "name_pstate": pstate,
-            "name_ppriority": ppriority,
-            "name_ppowerlimit": ppowerlimit,
-            "name_ppowerlimit2": ppowerlimit2,
-            f"sel_{port_number}": 1,
-            "applay": "Apply",
+            "operation": "update",
+            "tab": "unit1",
+            "new": [ port, ],
         }
-        result = await self._core_api.post(URL_POE_PORT_SETTINGS_SET, data)
+        result = await self._core_api.post(URL_POE_PORT_SETTINGS, data)
         _LOGGER.debug("POE_PORT_SETTINGS_SET_RESULT: %s", result)
