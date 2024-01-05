@@ -17,7 +17,7 @@ from homeassistant.const import (
 )
 from homeassistant.core import callback
 
-from .client.coreapi import AuthenticationError, TpLinkWebApi
+from .client.coreapi import AuthenticationError, TpLinkJsonApi
 from .const import (
     DEFAULT_HOST,
     DEFAULT_NAME,
@@ -79,7 +79,7 @@ class TpLinkControllerConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors["base"] = "name_exists"
 
             # Test connection
-            api = TpLinkWebApi(
+            api = TpLinkJsonApi(
                 host=user_input[CONF_HOST],
                 port=user_input[CONF_PORT],
                 use_ssl=user_input[CONF_SSL],
