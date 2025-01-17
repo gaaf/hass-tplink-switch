@@ -59,12 +59,13 @@ class TpLinkControllerConfigFlow(ConfigFlow, domain=DOMAIN):
 
     def __init__(self):
         """Initialize."""
+        super().__init__()
 
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
         """Get the options flow for this handler."""
-        return TpLinkControllerOptionsFlowHandler(config_entry)
+        return TpLinkControllerOptionsFlowHandler()
 
     async def async_step_import(self, user_input=None):
         """Occurs when a previous entry setup fails and is re-initiated."""
@@ -148,10 +149,8 @@ class TpLinkControllerConfigFlow(ConfigFlow, domain=DOMAIN):
 class TpLinkControllerOptionsFlowHandler(OptionsFlow):
     """Handle options."""
 
-    def __init__(self, config_entry):
-        """Initialize options flow."""
-        self.config_entry = config_entry
-        self.options = dict(config_entry.options)
+    def __init__(self):
+        super().__init__()
 
     async def async_step_init(self, user_input=None):
         """Manage the options."""
@@ -160,7 +159,6 @@ class TpLinkControllerOptionsFlowHandler(OptionsFlow):
     async def async_step_basic_options(self, user_input=None):
         """Manage the basic options options."""
         if user_input is not None:
-            self.options.update(user_input)
             return await self.async_step_features_select()
 
         return self.async_show_form(
@@ -183,8 +181,7 @@ class TpLinkControllerOptionsFlowHandler(OptionsFlow):
     async def async_step_features_select(self, user_input=None):
         """Manage the controls select options."""
         if user_input is not None:
-            self.options.update(user_input)
-            return self.async_create_entry(title="", data=self.options)
+            return self.async_create_entry(data=self.config_entry.options | user_input)
 
         return self.async_show_form(
             step_id="features_select",
