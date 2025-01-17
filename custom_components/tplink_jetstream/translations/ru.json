@@ -1,9 +1,9 @@
 {
     "config": {
-        "title": "TP-Link Easy Smart",
+        "title": "TP-Link JetStream",
         "step": {
             "user": {
-                "description": "Настройка интеграции TP-Link Easy Smart.",
+                "description": "Настройка интеграции TP-Link JetStream.",
                 "data": {
                     "name": "Название интеграции",
                     "host": "Адрес маршрутизатора",
@@ -30,7 +30,7 @@
                 "data": {
                     "scan_interval": "Период обновления"
                 },
-                "title": "Настройка интеграции TP-Link Easy Smart (1\/2)",
+                "title": "Настройка интеграции TP-Link JetStream (1\/2)",
                 "description": "Базовые настройки"
             },
             "features_select": {
@@ -38,7 +38,7 @@
                     "port_state_switches": "Выключатели портов",
                     "poe_state_switches": "Выключатели PoE портов"
                 },
-                "title": "Настройка интеграции TP-Link Easy Smart (2\/2)",
+                "title": "Настройка интеграции TP-Link JetStream (2\/2)",
                 "description": "Элементы управления"
             }
         }

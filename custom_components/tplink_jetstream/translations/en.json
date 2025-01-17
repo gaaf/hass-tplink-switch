@@ -1,9 +1,9 @@
 {
     "config": {
-        "title": "TP-Link Easy Smart",
+        "title": "TP-Link JetStream",
         "step": {
             "user": {
-                "description": "TP-Link easy smart switch setup.",
+                "description": "TP-Link JetStream switch setup.",
                 "data": {
                     "name": "Integration name",
                     "host": "Host",
@@ -30,7 +30,7 @@
                 "data": {
                     "scan_interval": "Update interval"
                 },
-                "title": "TP-Link easy smart switch setup (1\/2)",
+                "title": "TP-Link JetStream switch setup (1\/2)",
                 "description": "Basic options"
             },
             "features_select": {
@@ -38,7 +38,7 @@
                     "port_state_switches": "Port state switches",
                     "poe_state_switches": "Port PoE state switches"
                 },
-                "title": "TP-Link easy smart switch setup (2\/2)",
+                "title": "TP-Link JetStream switch setup (2\/2)",
                 "description": "Controls"
             }
         }

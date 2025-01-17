@@ -1,13 +1,13 @@
-# TP-Link Easy Smart switches component for Home Assistant
+# TP-Link JetStream switches component for Home Assistant
 
-Home Assistant custom component for control TP-Link Easy Smart switches over LAN.
+Home Assistant custom component for control TP-Link JetStream switches over LAN.
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg)](https://github.com/hacs/integration)
-[![License](https://img.shields.io/github/license/vmakeev/hass_tplink_easy_smart)](https://github.com/vmakeev/hass_tplink_easy_smart/blob/master/LICENSE.md)
-![Active installations](https://raw.githubusercontent.com/vmakeev/custom_badges_updater/main/tplink_easy_smart.svg)
+[![License](https://img.shields.io/github/license/gaaf/hass-tplink-jetstream)](https://github.com/gaaf/hass-tplink-jetstream/blob/master/LICENSE.md)
+![Active installations](https://raw.githubusercontent.com/vmakeev/custom_badges_updater/main/tplink_jetstream.svg)
 
-[![Release](https://img.shields.io/github/v/release/vmakeev/hass_tplink_easy_smart)](https://github.com/vmakeev/hass_tplink_easy_smart/releases/latest)
-[![ReleaseDate](https://img.shields.io/github/release-date/vmakeev/hass_tplink_easy_smart)](https://github.com/vmakeev/hass_tplink_easy_smart/releases/latest)
+[![Release](https://img.shields.io/github/v/release/gaaf/hass-tplink-jetstream)](https://github.com/gaaf/hass-tplink-jetstream/releases/latest)
+[![ReleaseDate](https://img.shields.io/github/release-date/gaaf/hass-tplink-jetstream)](https://github.com/gaaf/hass-tplink-jetstream/releases/latest)
 ![Maintained](https://img.shields.io/maintenance/yes/2023)
 
 ## Key features
@@ -30,23 +30,22 @@ Home Assistant custom component for control TP-Link Easy Smart switches over LAN
 
 |                                          Name                                            |  Revision | Confirmed |           Notes                         |
 |------------------------------------------------------------------------------------------|-----------|-----------|-----------------------------------------|
-| [TL-SG1016PE](https://www.tp-link.com/en/business-networking/poe-switch/tl-sg1016pe/)    |   V1, V3  |    Yes    | All features are available              |
-| [TL-SG105E](https://www.tp-link.com/en/business-networking/easy-smart-switch/tl-sg105e/) |     V5    |    Yes    | PoE is not supported by device          |
-| Other Easy Smart switches with web-based user interface                                  | --------- |    No     | Will most likely work                   
+| [TL-SG2428P](https://www.tp-link.com/en/business-networking/omada-sdn-switch/tl-sg2428p/)    |   V1     |    Yes    | All features are available              |
+| Other JetStream switches with web-based user interface                                  | --------- |    No     | Will most likely work
 
 ## Installation
 
 ### Manual
 
-Copy `tplink_easy_smart` folder from [latest release](https://github.com/vmakeev/hass_tplink_easy_smart/releases/latest) to `custom_components` folder in your Home Assistant config folder and restart Home Assistant. The final path to folder should look like this: `<home-assistant-config-folder>/custom_components/tplink_easy_smart`.
+Copy `tplink_jetstream` folder from [latest release](https://github.com/gaaf/hass-tplink-jetstream/releases/latest) to `custom_components` folder in your Home Assistant config folder and restart Home Assistant. The final path to folder should look like this: `<home-assistant-config-folder>/custom_components/tplink_jetstream`.
 
 ### HACS
 
-[Add a custom repository](https://hacs.xyz/docs/faq/custom_repositories/) `https://github.com/vmakeev/hass_tplink_easy_smart` with `Integration` category to [HACS](https://hacs.xyz/) and restart Home Assistant.
+[Add a custom repository](https://hacs.xyz/docs/faq/custom_repositories/) `https://github.com/gaaf/hass-tplink-jetstream` with `Integration` category to [HACS](https://hacs.xyz/) and restart Home Assistant.
 
 ## Configuration
 
-Configuration > [Integrations](https://my.home-assistant.io/redirect/integrations/) > Add Integration > [TP-Link Easy Smart](https://my.home-assistant.io/redirect/config_flow_start/?domain=tplink_easy_smart)
+Configuration > [Integrations](https://my.home-assistant.io/redirect/integrations/) > Add Integration > [TP-Link JetStream](https://my.home-assistant.io/redirect/config_flow_start/?domain=tplink_jetstream)
 
 
 ### Advanced options

@@ -1,4 +1,4 @@
-"""TP-Link Easy Smart integration."""
+"""TP-Link JetStream integration."""
 
 import logging
 

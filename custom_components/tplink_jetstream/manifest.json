@@ -1,0 +1,16 @@
+{
+  "domain": "tplink_jetstream",
+  "name": "TP-Link JetStream",
+  "integration_type": "device",
+  "documentation": "https://github.com/gaaf/hass-tplink-jetstream",
+  "issue_tracker": "https://github.com/gaaf/hass-tplink-jetstream/issues",
+  "codeowners": [
+    "@gaaf"
+  ],
+  "iot_class": "local_polling",
+  "requirements": [
+    "json5==0.9.10"
+  ],
+  "version": "0.3.1",
+  "config_flow": true
+}

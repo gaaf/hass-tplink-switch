@@ -4,7 +4,7 @@ from typing import Final
 
 from homeassistant.const import Platform
 
-DOMAIN: Final = "tplink_easy_smart"
+DOMAIN: Final = "tplink_jetstream"
 
 DATA_KEY_COORDINATOR: Final = "coordinator"
 DATA_KEY_SERVICES: Final = "services_count"
